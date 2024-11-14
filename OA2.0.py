@@ -8,20 +8,11 @@ Created on Sat Nov  9 16:06:57 2024
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy import optimize
 from scipy import stats
 import numpy as np
 import os as os
 
 slopeStrs = ['SBP','NADH','ADP','CCCP','Piericidin A']
-
-#line for future line fitting
-def line(x, m, b): 
-    y = (m * x) + b
-    return y
-
-def calcr2():
-    return
 
 #requestions number of trials and names from user 
 #outputs the list of names of the excel sheet names form the user
@@ -221,7 +212,7 @@ def main():
     dfSlopes = barPlot(dfSlopes)
     dfSlopes.to_excel('slopes.xlsx')
     
-    print('Thank you for using the Letts Lab Oxygraph Analysis script!\nSee file outputs in current working dire')
+    print('Thank you for using the Letts Lab Oxygraph Analysis script!\nSee file outputs in current working directory')
     
     
 if __name__ == "__main__":
