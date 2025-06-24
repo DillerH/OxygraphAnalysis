@@ -12,7 +12,7 @@ from scipy import stats
 import numpy as np
 import os as os
 
-slopeStrs = ['SBP','NADH','ADP','CCCP','Piericidin A']
+slopeStrs = ['Liposome','NADH','CCCP','PierA']
 
 #requestions number of trials and names from user 
 #outputs the list of names of the excel sheet names form the user
@@ -26,7 +26,8 @@ def importData():
     trialList = os.listdir(dataDir)
     os.chdir(dataDir)
     for i in trialList:
-        dfList.append(pd.read_excel(i))
+        if i != '.DS_Store':
+            dfList.append(pd.read_excel(i))
     os.chdir(cDir)
     return dfList
 
@@ -34,6 +35,7 @@ def importData():
 def sectionData(df_it, n, sectionTimes):
       
     chemicalSlices = []
+    
     for i in range(0,len(sectionTimes)):
         if i != (len(sectionTimes)-1):
             chemicalSlice = df_it.query('time >= @sectionTimes[@i] and time < @sectionTimes[@i+1]')
@@ -155,7 +157,7 @@ def plotTotalOxygraph(dfList, sectionTimes):
     newPath = cwd+'/Figures/Total'
     os.chdir(newPath)
     k = 1
-    for df_it in dfList:
+    for i, df_it in enumerate(dfList):
         df_it = df_it.query('time >= 0')
         fig, ax = plt.subplots(figsize=(8,8))
         ax.plot(df_it['time'], df_it['Oxygen 1'],color='fuchsia')
@@ -163,8 +165,9 @@ def plotTotalOxygraph(dfList, sectionTimes):
         ax.set_ylabel('Oxygen Concentration '+r'$\frac{nmol O_2}{mL}$',fontsize=20)
         ax.set_title('Entire SBP Respiration Trial '+str(k),fontsize=20)
         ax.grid()
-        for i in range(0,len(sectionTimes)):
-            xpos = sectionTimes[i]
+        itTimes = sectionTimes[i]
+        for i in range(0,len(itTimes)):
+            xpos = itTimes[i]
             ypos = df_it.query('time == @xpos')['Oxygen 1'].values[0] - 1.15
             if slopeStrs[i]!= 'Piericidin A':
                 ax.text(xpos, ypos, slopeStrs[i]+"→", rotation=90)
@@ -178,13 +181,14 @@ def plotTotalOxygraph(dfList, sectionTimes):
     
 def fixTime(dfList):
     k = 0
+    sectionTimes = []
     for df_it in dfList:
         df_temp = df_it[df_it['Label'].isin(slopeStrs)]
         timeStart = df_temp['Time'].iloc[0] - 10
         df_it['time'] = df_it['Time'] - timeStart
         df_temp = df_it[df_it['Label'].isin(slopeStrs)]
         df_it = df_it.query('time >= 0')
-        sectionTimes = df_temp.time.tolist()
+        sectionTimes.append(df_temp.time.tolist())
         dfList[k] = df_it
         k+=1
     return dfList, sectionTimes
@@ -194,8 +198,11 @@ def main():
     trialStrs = []
     print('\nHello welcome to the Oxygraph Scipt for the Letts Lab! \n\nPlease ensure you are in the correct directory and that you print file names verbose.')
     dfList = importData()
+    
     makeDirs()
     dfList, sectionTimes = fixTime(dfList)
+    for i in dfList:
+        print(i.head())
     plotTotalOxygraph(dfList, sectionTimes)
     for i in range(1,len(dfList)+1):
         trialStrs.append(i)
@@ -203,7 +210,7 @@ def main():
     dfSlopes = pd.DataFrame(0,index=slopeStrs,columns=trialStrs)
 
     for i in range(0,len(dfList)):
-        sliceList = sectionData(dfList[i], i,sectionTimes)
+        sliceList = sectionData(dfList[i], i,sectionTimes[i])
         slopeList = []
         for k in range(0,len(slopeStrs)):
             slopeList = trimSlice(sliceList[k],slopeStrs[k], i, slopeList)
